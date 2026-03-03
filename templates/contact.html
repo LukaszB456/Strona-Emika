@@ -1,0 +1,29 @@
+{% extends "index.html" %}
+
+{% block title %}
+O nas
+{% endblock %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12 col-lg-6 d-flex justify-content-center align-items-center">
+            <div class="card" style="width: 20rem;">
+                <img src="{{ url_for('static', filename='assets/img/phone.png') }}" class="card-img-top" alt="...">
+                <div class="card-body text-center">
+                    <p class="card-text"><b>jakis nr telefonu.</b></p>
+                </div>
+            </div>
+        </div>
+       <div class="col-12 col-lg-6 d-flex justify-content-center align-items-center">
+            <div class="card" style="width: 20rem;">
+                 <img src="{{ url_for('static', filename='assets/img/mail.png') }}" class="card-img-top" alt="...">
+                <div class="card-body text-center">
+                    <p class="card-text"><b>jakis email.</b></p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
