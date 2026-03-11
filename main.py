@@ -1,10 +1,12 @@
-from flask import Flask, session, redirect, url_for, request, render_template, flash
+from flask import Flask, session, redirect, url_for, request, render_template, flash, current_app
 from flask_login import LoginManager, UserMixin, \
                                 login_required, login_user, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from datetime import timedelta, datetime
 import random
 import smtplib  # lub inna biblioteka do maili
+import os
+
 
 app = Flask(__name__)
 app.secret_key = 'SECRETKEY'
@@ -16,12 +18,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+login_manager.init_app(app)
 login_manager.login_view = 'login'  # jeśli niezalogowany -> przekierowanie do login
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
+
+class Post(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    image_folder = db.Column(db.String(255), nullable=True)
+    is_visible = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 with app.app_context():
     db.create_all() 
@@ -78,6 +89,68 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("home"))
+
+@app.route("/our-work")
+def our_work():
+    posts = (
+        Post.query
+        .filter_by(is_visible=True)
+        .order_by(Post.created_at.desc())
+        .all()
+    )
+
+    for post in posts:
+        images = []
+        if post.image_folder:
+            folder_path = os.path.join(
+                current_app.static_folder,
+                "uploads",
+                post.image_folder
+            )
+
+            if os.path.exists(folder_path):
+                images = os.listdir(folder_path)
+
+        post.images = images  # dynamiczne pole tylko do szablonu
+
+    return render_template("our_work.html", posts=posts)
+
+@app.route("/add-post", methods=["POST"])
+@login_required
+def add_post():
+    title = request.form.get("title")
+    content = request.form.get("content")
+    images = request.files.getlist("images")  # wiele plików
+
+    if not title or not content:
+        flash("Tytuł i treść są wymagane!", "danger")
+        return redirect(url_for("our_work"))
+
+    # utwórz folder dla posta
+    post_folder = f"post_{int(datetime.utcnow().timestamp())}"
+    upload_path = os.path.join(app.static_folder, "uploads", post_folder)
+    os.makedirs(upload_path, exist_ok=True)
+
+    # zapisz pliki
+    for img in images:
+        if img.filename != "":
+            filename = secure_filename(img.filename)
+            img.save(os.path.join(upload_path, filename))
+
+    # dodaj wpis do bazy
+    post = Post(
+        title=title,
+        content=content,
+        image_folder=post_folder,
+        is_visible=True
+    )
+
+    db.session.add(post)
+    db.session.commit()
+
+    flash("Dodano wpis!", "success")
+    return redirect(url_for("our_work"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)

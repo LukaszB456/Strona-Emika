@@ -1,0 +1,91 @@
+{% extends "index.html" %}
+
+{% block main_content %}
+
+<div class="container my-5">
+   
+
+    {% if current_user.is_authenticated %}
+    <!-- Przycisk wywołujący modal -->
+    <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addPostModal">
+        Dodaj wpis
+    </button>
+    {% endif %}
+
+    {% for post in posts %}
+        <div class="mb-5">
+
+            <!-- Tytuł -->
+            <h2>{{ post.title }}</h2>
+
+            <!-- Opis -->
+            <p class="lead">{{ post.content }}</p>
+
+            {% if post.images %}
+                <div id="carousel-{{ post.id }}" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+
+                        {% for image in post.images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ url_for('static', filename='uploads/' ~ post.image_folder ~ '/' ~ image) }}"
+                                class="d-block w-100"
+                                alt="Post image">
+                        </div>
+                        {% endfor %}
+
+                    </div>
+
+                    <button class="carousel-control-prev" type="button"
+                            data-bs-target="#carousel-{{ post.id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+
+                    <button class="carousel-control-next" type="button"
+                            data-bs-target="#carousel-{{ post.id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                </div>
+            {% endif %}
+
+        </div>
+    {% endfor %}
+
+</div>
+<!-- Modal Dodawania Posta -->
+<div class="modal fade" id="addPostModal" tabindex="-1" aria-labelledby="addPostModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('add_post') }}" enctype="multipart/form-data">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addPostModalLabel">Dodaj nowy wpis</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body">
+              <div class="mb-3">
+                  <label for="title" class="form-label">Tytuł</label>
+                  <input type="text" class="form-control" id="title" name="title" required>
+              </div>
+
+              <div class="mb-3">
+                  <label for="content" class="form-label">Opis</label>
+                  <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
+              </div>
+
+              <div class="mb-3">
+                  <label for="images" class="form-label">Zdjęcia</label>
+                  <input class="form-control" type="file" id="images" name="images" multiple>
+              </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+            <button type="submit" class="btn btn-primary">Dodaj wpis</button>
+          </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+
+{% endblock %}
